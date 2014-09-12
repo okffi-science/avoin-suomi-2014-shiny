@@ -1,0 +1,151 @@
+---
+title: "Luottamus"
+output: 
+   html_document:
+     theme: spacelab 
+runtime: shiny
+---
+
+</br>
+</br>
+
+>Sivulla on useita vuorovaikutteisia kuvioita, joissa voit verrata omia näkemyksiäsi eri Euroopan maiden kansalaisten näkemyksiin. Jokaisesta kuviosta voit valita **keskiarvot**, **jakauman** tai **keskiarvokartan**.
+
+
+</br>
+</br>
+
+
+
+## Luottamus julkiseen valtaan
+
+>Kertokaa asteikolla nollasta kymmeneen, kuinka paljon henkilökohtaisesti luotatte seuraavaksi luettelemiini tahoihin. **Nolla** tarkoittaa sitä, että ette luota ollenkaan kyseiseen tahoon ja **10** sitä, että luotatte erittäin vahvasti kyseiseen tahoon:
+
+```{r, echo=FALSE}
+    source("data_luottamus.R")
+    source("funktiot.R")
+
+
+shinyApp(
+  ui = fluidPage(
+    
+    inputPanel(
+                    selectInput("var", label = h4("Valitse taho!"), 
+                                choices = list("Eduskunta" = "df$trstprl", 
+                                               "Oikeusjärjestelmä" = "df$trstlgl",
+                                               "Poliisi"="df$trstplc",
+                                               "Poliitikot"="df$trstplt",
+                                               "Poliittiset puolueet"="df$trstprt",
+                                               "Euroopan parlamentti"="df$trstep",
+                                               "YK eli Yhdistyneet Kansakunnat"="df$trstun")),
+                    sliderInput("value", h4("Vastaa itse tähän!"),  
+                                min = 0, max = 10, value = 5)
+                    ),
+                  
+                  
+      tabsetPanel(
+                  tabPanel("Keskiarvot maittain", plotOutput("ess_keskiarvo", height="450px",width="100%")), 
+                  tabPanel("Eri vastausvaihtoehtojen osuudet maittain", plotOutput("ess_jakauma", height="450px",width="100%")),
+                  tabPanel("Maittaiset keskiarvot kartalla", plotOutput("ess_kartta", height="450px",width="100%"))
+      )
+    ),
+  
+  server = function(input, output) {
+    
+
+
+    
+    output$ess_keskiarvo <- renderPlot({
+
+         ess_keskiarvo(var=input$var,
+                   value = as.numeric(input$value)
+         )
+         })
+  
+  
+    output$ess_jakauma <- renderPlot({
+    
+          ess_jakauma(var=input$var,
+                    value = as.numeric(input$value)
+          )
+          })
+  
+    output$ess_kartta <- renderPlot({
+    
+         ess_kartta(var=input$var,
+                    value = as.numeric(input$value)
+         )
+         })
+  
+
+},
+options = list(height = 650))
+    
+  
+```
+
+
+
+## Luottamus toisiin ihmisiin
+
+
+```{r, echo=FALSE}
+
+shinyApp(
+  ui = fluidPage(
+    
+    inputPanel(
+      
+       selectInput("var", label = h4("Valitse kysymys!"), width="600px",
+                                choices = list("Voiko mielestänne ihmisiin luottaa, vai onko niin, ettei ihmisten suhteen voi olla liian varovainen? Nolla tarkoittaa, ettei ihmisten kanssa voi olla liian varovainen ja 10, että useimpiin ihmisiin voi luottaa" = "df$ppltrst", 
+                                               "Oletteko sitä mieltä, että useimmat ihmiset tilaisuuden tullen yrittäisivät käyttää Teitä hyväkseen vai luuletteko, että ihmiset yrittäisivät olla reiluja? Nolla tarkoittaa, että useimmat ihmiset yrittäisivät käyttää minua hyväkseen ja 10, että useimmat ihmiset yrittäisivät olla reiluja" = "df$pplfair",
+                                               "Katsotteko, että useimmiten ihmiset pyrkivät olemaan auttavaisia toisia kohtaan vai että enimmäkseen he ajattelevat vain omaa etuaan? Nolla tarkoittaa, että ihmiset ajattelevat enimmäkseen omaa etuaan ja 10, että ihmiset yrittävät enimmäkseen olla auttavaisia"="df$pplhlp")),
+       
+                    sliderInput("value", h4("Vastaa itse tähän!"),  
+                                min = 0, max = 10, value = 5)
+                    ),
+                  
+                  
+      tabsetPanel(
+                  tabPanel("Keskiarvot maittain", plotOutput("ess_keskiarvo", height="450px",width="100%")), 
+                  tabPanel("Eri vastausvaihtoehtojen osuudet maittain", plotOutput("ess_jakauma", height="450px",width="100%")),
+                  tabPanel("Maittaiset keskiarvot kartalla", plotOutput("ess_kartta", height="450px",width="100%"))
+      )
+    ),
+  
+  server = function(input, output) {
+    
+
+
+    
+    output$ess_keskiarvo <- renderPlot({
+
+         ess_keskiarvo(var=input$var,
+                   value = as.numeric(input$value)
+         )
+         })
+  
+  
+    output$ess_jakauma <- renderPlot({
+    
+          ess_jakauma(var=input$var,
+                    value = as.numeric(input$value)
+          )
+          })
+  
+    output$ess_kartta <- renderPlot({
+    
+         ess_kartta(var=input$var,
+                    value = as.numeric(input$value)
+         )
+         })
+  
+
+},
+options = list(height = 750))
+    
+  
+```
+
+
+

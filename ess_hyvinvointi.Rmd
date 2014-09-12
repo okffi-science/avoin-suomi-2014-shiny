@@ -1,0 +1,363 @@
+---
+title: "Hyvinvointi"
+output: 
+   html_document:
+     theme: spacelab 
+runtime: shiny
+---
+
+</br>
+</br>
+
+>Sivulla on useita vuorovaikutteisia kuvioita, joissa voit verrata omia näkemyksiäsi eri Euroopan maiden kansalaisten näkemyksiin. Jokaisesta kuviosta voit valita **keskiarvot**, **jakauman** tai **keskiarvokartan**.
+
+
+</br>
+</br>
+
+
+### Kuinka onnellinen yleisesti ottaen olette?
+
+>**nolla** tarkoittaa *erittäin onnetonta*, **10** tarkoittaa *erittäin onnellista*
+
+
+```{r, echo=FALSE}
+    source("data_hyvinvointi.R")
+    source("funktiot.R")
+
+
+shinyApp(
+  ui = fluidPage(
+    
+    inputPanel(
+#                     selectInput("var", label = h4("Valitse taho!"), width= "600px", 
+#                                 choices = list("nykyisestä koulutusjärjestelmästä (tai koulutuksen tasosta)?" = "df$stfedu", 
+#                                                "terveyspalvelujen tasosta nykyisin?" = "df$stfhlth")),
+                    sliderInput("value", h4("Vastaa itse tähän!"),  
+                                min = 0, max = 10, value = 5)
+                    ),
+                  
+                  
+      tabsetPanel(
+                  tabPanel("Keskiarvot maittain", plotOutput("ess_keskiarvo", height="450px",width="100%")), 
+                  tabPanel("Eri vastausvaihtoehtojen osuudet maittain", plotOutput("ess_jakauma", height="450px",width="100%")),
+                  tabPanel("Maittaiset keskiarvot kartalla", plotOutput("ess_kartta", height="450px",width="100%"))
+      )
+    ),
+  
+  server = function(input, output) {
+    
+
+
+    
+    output$ess_keskiarvo <- renderPlot({
+
+         ess_keskiarvo(var="df$happy",
+                   value = as.numeric(input$value)
+         )
+         })
+  
+  
+    output$ess_jakauma <- renderPlot({
+    
+          ess_jakauma(var="df$happy",
+                    value = as.numeric(input$value)
+          )
+          })
+  
+    output$ess_kartta <- renderPlot({
+    
+         ess_kartta(var="df$happy",
+                    value = as.numeric(input$value)
+         )
+         })
+  
+
+},
+options = list(height = 750))
+    
+  
+```
+
+***
+
+### Mikä on Teidän terveydentilanne yleensä ottaen:
+
+```{r, echo=FALSE}
+    source("data_hyvinvointi.R")
+    source("funktiot.R")
+
+
+shinyApp(
+  ui = fluidPage(
+    
+    inputPanel(
+#                     selectInput("var", label = h4("Valitse taho!"), width= "600px", 
+#                                 choices = list("nykyisestä koulutusjärjestelmästä (tai koulutuksen tasosta)?" = "df$stfedu", 
+#                                                "terveyspalvelujen tasosta nykyisin?" = "df$stfhlth")),
+                    radioButtons("value", h4("Vastaa itse tähän"),
+                                c("Erittäin hyvä"=5,
+                                  "Hyvä"=4,
+                                  "Kohtuullinen"=3,
+                                  "Huono"=2,
+                                  "Erittäin huono"=1))
+                    ),
+                  
+                  
+      tabsetPanel(
+                  tabPanel("Keskiarvot maittain", plotOutput("ess_keskiarvo", height="450px",width="100%")), 
+                  tabPanel("Eri vastausvaihtoehtojen osuudet maittain", plotOutput("ess_jakauma", height="450px",width="100%")),
+                  tabPanel("Maittaiset keskiarvot kartalla", plotOutput("ess_kartta", height="450px",width="100%"))
+      )
+    ),
+  
+  server = function(input, output) {
+    
+
+
+    
+    output$ess_keskiarvo <- renderPlot({
+
+         ess_keskiarvo(var="df$health",
+                   value = as.numeric(input$value)
+         )
+         })
+  
+  
+    output$ess_jakauma <- renderPlot({
+    
+          ess_jakauma(var="df$health",
+                    value = as.numeric(input$value)
+          )
+          })
+  
+    output$ess_kartta <- renderPlot({
+    
+         ess_kartta(var="df$health",
+                    value = as.numeric(input$value)
+         )
+         })
+  
+
+},
+options = list(height = 750))
+    
+  
+```
+
+ 
+***
+***
+
+## Palvelujärjestelmä
+
+### Mitä mieltä olette maanne... 
+
+>**Nolla** tarkoittaa *äärimmäisen huonoa* ja  **10** *äärimmäisen hyvää*
+
+```{r, echo=FALSE}
+    source("data_hyvinvointi.R")
+    source("funktiot.R")
+
+
+shinyApp(
+  ui = fluidPage(
+    
+    inputPanel(
+                    selectInput("var", label = h4("Valitse taho!"), width= "600px", 
+                                choices = list("nykyisestä koulutusjärjestelmästä (tai koulutuksen tasosta)?" = "df$stfedu", 
+                                               "terveyspalvelujen tasosta nykyisin?" = "df$stfhlth")),
+                    sliderInput("value", h4("Vastaa itse tähän!"),  
+                                min = 0, max = 10, value = 5)
+                    ),
+                  
+                  
+      tabsetPanel(
+                  tabPanel("Keskiarvot maittain", plotOutput("ess_keskiarvo", height="450px",width="100%")), 
+                  tabPanel("Eri vastausvaihtoehtojen osuudet maittain", plotOutput("ess_jakauma", height="450px",width="100%")),
+                  tabPanel("Maittaiset keskiarvot kartalla", plotOutput("ess_kartta", height="450px",width="100%"))
+      )
+    ),
+  
+  server = function(input, output) {
+    
+
+
+    
+    output$ess_keskiarvo <- renderPlot({
+
+         ess_keskiarvo(var=input$var,
+                   value = as.numeric(input$value)
+         )
+         })
+  
+  
+    output$ess_jakauma <- renderPlot({
+    
+          ess_jakauma(var=input$var,
+                    value = as.numeric(input$value)
+          )
+          })
+  
+    output$ess_kartta <- renderPlot({
+    
+         ess_kartta(var=input$var,
+                    value = as.numeric(input$value)
+         )
+         })
+  
+
+},
+options = list(height = 750))
+    
+  
+```
+
+<!--
+
+## Tuloerot
+
+Valtiovallan pitäisi ryhtyä toimenpiteisiin tuloerojen vähentämiseksi?  gincdif
+Jotkut ihmiset ovat lähempänä yhteiskuntamme huippua ja toiset lähempänä sen pohjaa. Kortilla 35 esitetään asteikko huipulta pohjalle. Mihin kohtaan tällä asteikolla sijoittaisitte tällä hetkellä itsenne? plinsoc
+
+-->
+
+***
+***
+
+## Tyytyväisyys omaan elämään
+
+###  Missä määrin olette samaa tai eri mieltä seuraavien väittämien kanssa?
+
+
+```{r, echo=FALSE}
+    source("data_hyvinvointi.R")
+    source("funktiot.R")
+
+shinyApp(
+  ui = fluidPage(
+    
+    inputPanel(
+                    selectInput("var", label = h4("Valitse väittämä!"), width = "600px", 
+                                choices = list("Yleensä olen sitä mieltä, että se mitä teen elämässäni on arvokasta ja hyödyllistä?" = "df$dngval", 
+                                               "Kun ajattelee, miten asiat ovat nykyään, on vaikeaa suhtautua maailman tulevaisuuteen toiveikkaasti?
+" = "df$nhpftr",
+                                               "On paljon asioita, joissa tunnen olevani hyvä? "="df$lotsgot",
+                                               "Suurimmalla osalla maani kansalaisista elämä menee huonompaan, ei parempaan suuntaan?"="df$lfwrs",
+"Tunnen yhteenkuuluvuutta asuinalueeni ihmisiin?"="df$flclpla")),
+                    br(),
+
+                    radioButtons("value", h4("Vastaa itse tähän"),
+                                c("Täysin samaa mieltä"=5,
+                                  "Samaa mieltä"=4,
+                                  "Ei samaa eikä eri mieltä"=3,
+                                  "Eri mieltä"=2,
+                                  "Täysin eri mieltä"=1))
+                    ),
+                  
+                  
+      tabsetPanel(
+                  tabPanel("Keskiarvot maittain", plotOutput("ess_keskiarvo", height="450px",width="100%")), 
+                  tabPanel("Eri vastausvaihtoehtojen osuudet maittain", plotOutput("ess_jakauma", height="450px",width="100%")),
+                  tabPanel("Maittaiset keskiarvot kartalla", plotOutput("ess_kartta", height="450px",width="100%"))
+      )
+    ),
+  
+  server = function(input, output) {
+    
+
+
+    
+    output$ess_keskiarvo <- renderPlot({
+
+         ess_keskiarvo(var=input$var,
+                   value = as.numeric(input$value)
+         )
+         })
+  
+  
+    output$ess_jakauma <- renderPlot({
+    
+          ess_jakauma(var=input$var,
+                    value = as.numeric(input$value)
+          )
+          })
+  
+    output$ess_kartta <- renderPlot({
+    
+         ess_kartta(var=input$var,
+                    value = as.numeric(input$value)
+         )
+         })
+  
+
+},
+options = list(height = 750))
+    
+  
+```
+
+
+### Yleisesti ottaen, kuinka tyytyväinen olette.. 
+
+
+```{r, echo=FALSE}
+    source("data_hyvinvointi.R")
+    source("funktiot.R")
+
+
+shinyApp(
+  ui = fluidPage(
+    
+    inputPanel(
+                    selectInput("var", label = h4("Valitse taho!"),  width="500px",
+                                choices = list("elämäänne nykyisin?" = "df$stflife", 
+                                               "kaiken kaikkiaan olette tämän hetkiseen taloudelliseen tilanteeseen maassanne?" = "df$stfeco",
+                                               "siihen, miten maanne nykyinen hallitus hoitaa tehtävänsä?"="df$stfgov",
+                                               "siihen, kuinka demokratia toimii maassanne?"="df$stfdem")),
+                    
+                    sliderInput("value", h4("Vastaa itse tähän!"),  
+                                min = 0, max = 10, value = 5)
+                    ),
+                  
+                  
+      tabsetPanel(
+                  tabPanel("Keskiarvot maittain", plotOutput("ess_keskiarvo", height="450px",width="100%")), 
+                  tabPanel("Eri vastausvaihtoehtojen osuudet maittain", plotOutput("ess_jakauma", height="450px",width="100%")),
+                  tabPanel("Maittaiset keskiarvot kartalla", plotOutput("ess_kartta", height="450px",width="100%"))
+      )
+    ),
+  
+  server = function(input, output) {
+    
+
+
+    
+    output$ess_keskiarvo <- renderPlot({
+
+         ess_keskiarvo(var=input$var,
+                   value = as.numeric(input$value)
+         )
+         })
+  
+  
+    output$ess_jakauma <- renderPlot({
+    
+          ess_jakauma(var=input$var,
+                    value = as.numeric(input$value)
+          )
+          })
+  
+    output$ess_kartta <- renderPlot({
+    
+         ess_kartta(var=input$var,
+                    value = as.numeric(input$value)
+         )
+         })
+  
+
+},
+options = list(height = 650))
+    
+  
+```

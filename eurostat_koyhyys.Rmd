@@ -1,0 +1,262 @@
+---
+title: "Köyhyys"
+output: 
+   html_document:
+     theme: spacelab 
+runtime: shiny
+---
+
+
+
+
+```{r eurostat, echo=FALSE}
+
+source("eurostat_package/firstlib.R")
+source("eurostat_package/get_eurostat.R")
+source("eurostat_package/getEurostatDictionary.R")
+source("eurostat_package/get_eurostat_raw.R")
+source("eurostat_package/getEurostatTOC.R")
+source("eurostat_package/grepEurostatTOC.R")
+source("eurostat_package/label_eurostat.R")
+source("eurostat_package/setEurostatTOC.R")
+
+```
+
+
+
+### Missä maissa kotitaloutesi jäsenet olisivat köyhiä?
+
+Euroopan virallinen köyhyysraja lasketaan siten, että *henkilöt, joiden kotitalouden käytettävissä olevat tulot kulutusyksikköä kohti ovat pienemmät kuin 60 prosenttia maan vastaavasta mediaanitulosta* ovat köyhiä. Seuraavaan yksinkertaiseen laskuriin voit syöttää tulosi ja katsoa missä maissa olisi ollut köyhä vuonna 2012.
+
+
+```{r koyha, echo=FALSE, fig.height=15}
+inputPanel(
+  textInput("tulot", 
+            label = h4("Kotitaloutesi käytettävissä olevat tulot vuodessa (€) vuonna 2012"),
+            value = 15000), 
+  br(),
+   
+  sliderInput("aikuiset", "Yli 15-vuotiainen kotitalouden jäsenten määrä",  
+                                min = 1, max = 15, value = 1),
+  
+  sliderInput("lapset", "Alle 15-vuotiainen kotitalouden jäsenten määrä",  
+                                min = 1, max = 15, value = 1)
+)
+
+hr()
+h4("Näin paljon sinun ns. kulutusyksikköpainotetut tulot olisivat")
+
+renderTable({
+  tulot <- as.numeric(input$tulot)
+  aikuiset <- as.numeric(input$aikuiset)
+  lapset <- as.numeric(input$lapset)
+  ekviv_kotital_koko <- 1+(aikuiset-1)*0.5 + lapset*0.3
+  kulutusyksikkopainotetut_tulot <- tulot / ekviv_kotital_koko
+  data.frame(aikuiset,lapset,tulot,ekviv_kotital_koko,kulutusyksikkopainotetut_tulot)
+})
+
+hr()
+h4("Tästä näet missä maissa olisit köyhä ja kuinka paljon yli tai alle köyhyysrajan kotitaloutesi tulot ovat")
+
+renderTable({
+  load("data/raja.rda")
+  # 
+  tulot <- as.numeric(input$tulot)
+  aikuiset <- as.numeric(input$aikuiset)
+  lapset <- as.numeric(input$lapset)
+  ekviv_kotital_koko <- 1+(aikuiset-1)*0.5 + lapset*0.3
+  kulutusyksikkopainotetut_tulot <- tulot / ekviv_kotital_koko
+  #
+  raja$kulutusyksikkopainotetut_tulot <- kulutusyksikkopainotetut_tulot
+  raja$koyha[raja$kulutusyksikkopainotetut_tulot <= raja$value] <- "köyhä"
+  raja$koyha[raja$kulutusyksikkopainotetut_tulot > raja$value] <- "ei-köyhä"
+  raja$ero_koyhyysrajaan <- raja$kulutusyksikkopainotetut_tulot - raja$value
+  #
+  library(RCurl)
+  GHurl <- getURL("https://raw.githubusercontent.com/muuankarski/data/master/europe/eu_cntry.csv")
+  dat <- read.csv(text = GHurl)
+  raja <- merge(raja,dat,by.x="geo",by.y="NUTS_ID")
+  raja <- raja[order(raja$ero_koyhyysrajaan), ]
+  raja[,c(11,5,6,7,8)]
+})
+
+```
+
+
+### EU:n 2020 köyhyystavoitteet
+
+Osana EU:n 2020 kasvustrategiaa yhdeksi viidestä kärkitavoitteesta asetettiin *köyhyyden- tai syrjäytymisvaaran poistaminen vähintään 20 miljoonalta ihmiseltä vuoteen 2020 mennessä*. Alla olevasta härvelistä voit katsoa miten siinä on edetty viime vuoteen mennessä ja missä maissa on eniten *köyhyyttä*/*köyhiä*? (Kuvion alla vielä tarkemmat erittelyt eri indikaattoreista)
+
+
+
+```{r eu2020, echo=FALSE, fig.height=15}
+
+shinyApp(
+  ui = fluidPage(
+    
+    inputPanel(
+                    selectInput("nimi", label = h4("Valitse indikaattori"), 
+        choices = list("Suhteellinen tuloköyhyys" = "tuloköyhyys", 
+                       "Aineellinen puute" = "materiaalinen puute",
+                       "Matala työintensiteetti" = "työintensiteetti",
+                       "Kaikki indikaattorit yhdessä" = "kaikki yhdessä")), 
+  
+  selectInput("suure", label = h4("Valitse %-osuus vs. määrä"), 
+        choices = list("Väestöosuus (prosenttia)" = "väestöosuus (prosenttia)", 
+                       "Väestömäärä (tuhatta)" = "väestömäärä (tuhatta)")),
+  
+  selectInput("vuosi", label = h4("Kartan vuosi"), 
+        choices = list("2004" = 2004,
+                       "2005" = 2005,
+                       "2006" = 2006,
+                       "2007" = 2007,
+                       "2008" = 2008,
+                       "2009" = 2009,
+                       "2010" = 2010,
+                       "2011" = 2011,
+                       "2012" = 2012,
+                       "2013" = 2013), selected = 2012)
+                    ),
+                  
+                  
+      tabsetPanel(
+        tabPanel("Viivat", plotOutput("viivat")),
+        tabPanel("Kartta", plotOutput("kartta"))
+      )
+    ),
+  
+ server = function(input, output) {
+    
+  
+    output$viivat <- renderPlot({
+      load("data/df.both.rda")
+      cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#D55E00", "#0072B2", "#CC79A7","#F0E442")
+  
+
+      # plot
+      library(ggplot2)
+      library(grid)
+      df.plot <- df.both[df.both$nimi == input$nimi,]
+      df.plot <- df.plot[df.plot$suure == input$suure,]
+      df.plot <- df.plot[!is.na(df.plot$value), ]
+
+      ggplot(df.plot, aes(x=variable,y=value,color=regime_fi,group=maa)) +
+        geom_point(size=2) + 
+        geom_line(size=.5) +
+        geom_text(data=merge(df.plot, 
+                       aggregate(variable ~ maa, df.plot, max),
+                       by=c("variable","maa")),
+            aes(x=variable,y=value,color=regime_fi,label=maa),
+            hjust=0.5,vjust=-1,size=4) +
+      #facet_wrap(~nimi, ncol = 2) +
+      scale_color_manual(values=cbbPalette) +
+      theme_bw() +
+      #theme(axis.text.x = element_text(angle = 90, vjust = 0.5)) +
+      theme(legend.key.size = unit(3, "mm")) +
+      theme(text = element_text(size=14)) +
+      theme(legend.title = element_blank()) +
+      theme(axis.title = element_blank()) + 
+      theme(legend.position = "bottom") #+
+      #facet_wrap(~suure, scales = "free_y")
+    })
+    
+    output$kartta <- renderPlot({
+      load("data/df.both.rda")
+      load("data/map.df.rda")
+      cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#D55E00", "#0072B2", "#CC79A7","#F0E442")
+  
+      # plot
+      library(ggplot2)
+      library(grid)
+      df.plot <- df.both[df.both$nimi == input$nimi,]
+      df.plot <- df.plot[df.plot$suure == input$suure,]
+      df.plot <- df.plot[df.plot$variable == input$vuosi,]
+      df.plot <- df.plot[!is.na(df.plot$value), ]
+      
+      map.df.l <- merge(map.df,df.plot,by.x="CNTR_ID",by.y="geo.time")
+      map.df.l <- map.df.l[order(map.df.l$order), ]
+
+      if (input$suure == "väestöosuus (prosenttia)") keskipiste <- 15
+      if (input$suure == "väestömäärä (tuhatta)") keskipiste <- 2500
+      
+       library(mapproj)
+       library(maps)
+      library(scales)
+      ggplot(data=map.df.l,
+                 aes(long,lat,group=group)) +
+            geom_polygon(aes(fill = value),
+                     colour="white",
+                      size=.2) +
+            geom_polygon(data = map.df.l, aes(long,lat),
+                  fill=NA,
+                  colour="white",
+                  size = 0.1) +
+            scale_fill_gradient2(low="#00A08A",
+                        mid = "#ffffbf",
+                        high="#FF0000", midpoint=keskipiste) +
+#        coord_cartesian(xlim=c(-14,34),ylim=c(35,70)) +
+              coord_map(project="orthographic", xlim=c(-12,30),
+                    ylim=c(35,70)) +
+            facet_wrap(~nimi) +
+            theme_minimal() +
+            theme(legend.text = element_text(size=16)) +
+            theme(axis.text = element_blank()) +
+            theme(axis.title = element_blank()) +
+            theme(axis.ticks = element_blank()) +
+            theme(legend.position="right") +
+            theme(legend.title=element_blank()) +
+            theme(strip.text = element_text(size=20))
+      
+    })
+    
+    
+  }, options = list(height=650))
+```
+
+### EU2020 köyhyystavoite
+
+
+>poistetaan köyhyys- tai syrjäytymisvaara vähintään 20 miljoonalta ihmiseltä vuoteen 2020 mennessä
+
+
+####  Indikaattori 1: Suhteellinen tuloköyhyysriski
+
+[Kuvio](figure/eu2020venn4_fi.png)
+
+Henkilöt, joiden kotitalouden käytettävissä olevat tulot kulutusyksikköä kohti ovat pienemmät kuin 60 prosenttia maan vastaavasta mediaanitulosta
+
+
+#### Indikaattori 2: Vakava aineellinen puute
+
+[Kuvio](figure/eu2020venn2_fi.png)
+
+Kotitaloudella on puutteita aineellisessa elintasossa, jos vähintään neljä ehtoa yhdeksästä täyttyy:
+
+1. rästit asuntolainan, vuokran, muiden asumismenojen tai osamaksujen tai muiden lainojen takaisinmaksussa
+2. ei mahdollisuutta viikon lomaan kodin ulkopuolella
+3. ei mahdollisuutta proteiinipitoiseen ruokaan joka toinen päivä
+4. ei varaa hoitaa odottamattomia rahoituskuluja edellisvuoden köyhyysrajaa vastaavaa määrää
+5. ei varaa (matka)puhelimeen
+6. ei varaa väritelevisioon
+7. ei varaa pesukoneeseen
+8. ei varaa autoon
+9. ei varaa lämmittää asuntoaan riittävästi
+
+
+
+#### Indikaattori 3: Vajaatyöllisyys
+
+[Kuvio](figure/eu2020venn3_fi.png)
+
+**Lasketaan kotitalouksien työikäisen (18–59-vuotiaat) väestön työllisyysasteen perusteella**. Kotitalouden työikäiset aikuiset muodostavat potentiaalisen työssä kävijöiden perusjoukon. Heidän työllisinä oloaikansa vuoden aikana kuvaa työssäkäynnin intensiteettiä. 18–24-vuotiaat opiskelijat jätetään laskelman ulkopuolelle. **Kotitalouden työintensiteetti lasketaan suhteuttamalla työikäisten jäsenten työllisyyskuukausien summa kaikkien työikäisten yhteenlaskettuun potentiaaliseen aikaan** (12 kuukautta kullakin). Lopuksi otetaan huomioon kaikki näiden kotitalouksien alle 60-vuotiaat jäsenet, myös lapset. **Mittari kuvaa sitä, kuinka suuri osa väestöstä elää niissä kotitalouksissa, joissa työllisenä oloaika jää vähäisemmäksi kuin 20 prosenttia mahdollisesta työhön käytettävissäolevasta ajasta.**
+
+
+<hr>
+
+#### Köyhyyden ja sosiaalisen syrjäytymisen riskin kokonaismittari
+
+[Kuvio](figure/eu2020venn4_fi.png)
+
+Niiden kotitalouden jäsenet ovat köyhyyden ja sosiaalisen syrjätymisen riskissä, joiden kohdalla yksi tai useampi kolmesta indikaattorista toteutuu.
+
+

@@ -1,0 +1,156 @@
+---
+title: "Arvot"
+output: 
+   html_document:
+     theme: spacelab 
+runtime: shiny
+---
+
+</br>
+</br>
+
+>Sivulla on useita vuorovaikutteisia kuvioita, joissa voit verrata omia näkemyksiäsi eri Euroopan maiden kansalaisten näkemyksiin. Jokaisesta kuviosta voit valita **keskiarvot**, **jakauman** tai **keskiarvokartan**.
+
+
+</br>
+</br>
+
+
+
+## Asenteet maahanmuuttoa kohtaan
+
+### Kuinka paljon Suomen tulisi sallia sellaisten ihmisten muuttaa maahan asumaan, jotka
+
+```{r, echo=FALSE}
+    source("data_arvot.R")
+    source("funktiot.R")
+
+shinyApp(
+  ui = fluidPage(
+    
+    inputPanel(
+                    selectInput("var", label = h4("Valitse väittämä!"), width = "600px", 
+                                choices = list("kuuluvat samaan rotuun tai etniseen ryhmään kuin useimmat maanne kansalaiset?" = "df$imsmetn", 
+                                               "edustavat eri rotua tai etnistä alkuperää kuin useimmat maanne kansalaiset?" = "df$imdfetn",
+                                               "tulevat köyhemmistä Euroopan ulkopuolisista maista?"="df$impcntr")),
+                    br(),
+
+                    radioButtons("value", h4("Vastaa itse tähän"),
+                                c("Pitäisi sallia paljon"=4,
+                                  "Pitäisi sallia melko paljon"=3,
+                                  "Pitäisi sallia vähän"=2,
+                                  "Ei pitäisi sallia lainkaan"=1))
+                    ),
+                  
+                  
+      tabsetPanel(
+                  tabPanel("Keskiarvot maittain", plotOutput("ess_keskiarvo", height="450px",width="100%")), 
+                  tabPanel("Eri vastausvaihtoehtojen osuudet maittain", plotOutput("ess_jakauma", height="450px",width="100%")),
+                  tabPanel("Maittaiset keskiarvot kartalla", plotOutput("ess_kartta", height="450px",width="100%"))
+      )
+    ),
+  
+  server = function(input, output) {
+    
+
+
+    
+    output$ess_keskiarvo <- renderPlot({
+
+         ess_keskiarvo(var=input$var,
+                   value = as.numeric(input$value)
+         )
+         })
+  
+  
+    output$ess_jakauma <- renderPlot({
+    
+          ess_jakauma(var=input$var,
+                    value = as.numeric(input$value)
+          )
+          })
+  
+    output$ess_kartta <- renderPlot({
+    
+         ess_kartta(var=input$var,
+                    value = as.numeric(input$value)
+         )
+         })
+  
+
+},
+options = list(height = 750))
+    
+  
+```
+
+
+
+
+### Maahanmuuton vaikutukset maahanne
+
+
+```{r, echo=FALSE}
+    source("data_arvot.R")
+    source("funktiot.R")
+
+
+shinyApp(
+  ui = fluidPage(
+    
+    inputPanel(
+                    selectInput("var", label = h4("Valitse kysymys!"),  width="500px",
+                                choices = list("Onko kaiken kaikkiaan mielestänne haitaksi vai eduksi maanne taloudelle, että muista maista muuttaa ihmisiä maahanne? 0 tarkoittaa haittaa taloudelle ja 10 etua taloudelle." = "df$imbgeco", 
+                                               "Uskotteko, että kulttuurielämä maassanne heikentyy vai rikastuu, kun maahanne muuttaa ihmisiä muista maista? Nolla tarkoittaa että kulttuurielämä heikkenee ja 10 että rikastuu." = "df$imueclt",
+                                               "Muuttuuko maanne paremmaksi vai huonommaksi paikaksi asua, kun muista maista muuttaa tänne ihmisiä? Nolla tarkoittaa että muuttuu huonommaksi ja 10 että paremmaksi paikaksi asua."="df$imwbcnt")),
+                    
+                    sliderInput("value", h4("Vastaa itse tähän!"),  
+                                min = 0, max = 10, value = 5)
+                    ),
+                  
+                  
+      tabsetPanel(
+                  tabPanel("Keskiarvot maittain", plotOutput("ess_keskiarvo", height="450px",width="100%")), 
+                  tabPanel("Eri vastausvaihtoehtojen osuudet maittain", plotOutput("ess_jakauma", height="450px",width="100%")),
+                  tabPanel("Maittaiset keskiarvot kartalla", plotOutput("ess_kartta", height="450px",width="100%"))
+      )
+    ),
+  
+  server = function(input, output) {
+    
+
+
+    
+    output$ess_keskiarvo <- renderPlot({
+
+         ess_keskiarvo(var=input$var,
+                   value = as.numeric(input$value)
+         )
+         })
+  
+  
+    output$ess_jakauma <- renderPlot({
+    
+          ess_jakauma(var=input$var,
+                    value = as.numeric(input$value)
+          )
+          })
+  
+    output$ess_kartta <- renderPlot({
+    
+         ess_kartta(var=input$var,
+                    value = as.numeric(input$value)
+         )
+         })
+  
+
+},
+options = list(height = 750))
+    
+  
+```
+
+
+## Asenteet muita vähemmistöjä kohtaan
+
+

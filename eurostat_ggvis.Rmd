@@ -1,0 +1,19 @@
+---
+title: "testShiny"
+runtime: shiny
+output: html_document
+---
+
+```{r}
+
+library(shiny)
+library(ggvis)
+
+mtcars %>% 
+  ggvis(~wt, ~mpg, fill = ~factor(cyl)) %>% 
+  layer_points() %>% 
+  group_by(cyl) %>% 
+  layer_model_predictions(model = "lm")
+
+```
+
