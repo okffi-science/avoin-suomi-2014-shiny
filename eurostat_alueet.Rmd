@@ -1,5 +1,5 @@
 ---
-title: "Alueet"
+title: "Eurostat"
 output: 
    html_document:
     theme: spacelab
@@ -25,7 +25,7 @@ library(plyr)
 
 ```
 
-### Etsi datoja joissa alueellinen tieto
+## Etsi
 
 
 ```{r, echo=FALSE, eval=TRUE}
@@ -72,7 +72,7 @@ shinyApp(
 ```
 
 
-### Tutki datoja
+## Tutki
 
 ```{r, echo=FALSE, eval=TRUE, fig.height=12}
 
