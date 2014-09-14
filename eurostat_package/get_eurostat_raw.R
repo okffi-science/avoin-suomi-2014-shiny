@@ -33,13 +33,20 @@ get_eurostat_raw <-
 function(id) {
 
   adres <- paste("http://epp.eurostat.ec.europa.eu/NavTree_prod/everybody/BulkDownloadListing?sort=1&file=data%2F",id,".tsv.gz",sep="")
-  tfile <- tempfile()
-  on.exit(unlink(tfile))
-  
-  #  download and read file
-  download.file(adres, tfile)
-  dat <- read.table(gzfile(tfile), sep="\t", na.strings = ": ", 
+  # build cache
+  tfile <- paste0("eurostat_data/",id,".tsv.gz")
+  tfile_tsv <- paste0("eurostat_data/",id,".tsv")
+  #on.exit(unlink(tfile))
+  if (!file.exists(tfile_tsv) == TRUE) {
+    # create local folder if it is missing
+    # Create the web address from where to fetch the csv
+    download.file(adres, tfile)
+    system(paste0("gunzip ",tfile))
+  }
+  #  download and read file  
+  dat <- read.table(tfile_tsv, sep="\t", na.strings = ": ", 
                     header = TRUE, stringsAsFactors = FALSE)
   
   dat
 }
+

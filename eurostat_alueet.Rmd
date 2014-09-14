@@ -8,8 +8,6 @@ runtime: shiny
 
 </br>
 
-## Elinolot ja paikallinen talous Euroopan alueilla
-
 
 ```{r eurostat, echo=FALSE, echo=FALSE, eval=TRUE}
 
@@ -27,10 +25,10 @@ library(plyr)
 
 ```
 
-### Etsi sopivia datoja
+### Etsi datoja joissa alueellinen tieto
 
 
-```{r, echo=FALSE, eval=TRUE, eval=TRUE}
+```{r, echo=FALSE, eval=TRUE}
 
 shinyApp(
   ui = fluidPage(
@@ -39,7 +37,7 @@ shinyApp(
       inputPanel(
           textInput("phrase", 
             label = h4("Kirjoita tähän englanniksi kiinnostava hakutermi"),
-            value = "health care"),
+            value = "NUTS"),
   
                       radioButtons("tyyppi", h4("Valitse data/taulukko"),
                                 c("Dataset"="dataset",
@@ -67,218 +65,275 @@ shinyApp(
     
 
 
-} , options = list(height = 750)
+} , options = list(height = 550)
 )
     
   
 ```
 
 
-### Hae data Eurostatilta
+### Tutki datoja
 
-
-```{r, echo=FALSE, eval=TRUE}
+```{r, echo=FALSE, eval=TRUE, fig.height=12}
 
 shinyApp(
   ui = fluidPage(
+    
+      #sidebarLayout(
     
     inputPanel(
-          textInput("code", 
-            label = h4("Kopioi <code> kentän koodi tähän"),
-            value = "hlth_sha1m"),
-  
-#   radioButtons("muoto", h4("Valitse data/taulukko"),
-#                                 c("Pitkä"="long",
-#                                   "Leveä"="wide")),
-  
-#   radioButtons("labelling", h4("Tarkemmat tunnisteet"),
-#                                 c("Ei "="label_no",
-#                                   "Kyllä"="label_yes")),
-
-  submitButton("Päivitä!", icon("refresh"))
-      ),
-  
-  
-        tabsetPanel(
-                  tabPanel("Taulukon ekat 6 riviä", tableOutput("taulukko")), 
-                  tabPanel("summary(data)", verbatimTextOutput("summary")), 
-                  tabPanel("str(data)", verbatimTextOutput("str"))
-      )
-  
-    ),
-  
-  server = function(input, output) {
-    
-    dataInput <- reactive({
-          tbl <- get_eurostat(id=input$code)
-          #if (input$labelling == "label_no" )  tbl <- tbl
-          #if (input$labelling == "label_yes" ) {
-          label_eurostat(tbl)
-          #}
-        })
-    
-    
-
-    output$taulukko <- renderTable({
-      tbl <- dataInput()
-      rbind(head(tbl,3),tail(tbl,3))
-    })
-    
-      output$summary <- renderPrint({
-      tbl <- dataInput()
-      summary(tbl)
-    })
-    
-      output$str <- renderPrint({
-        tbl <- dataInput()
-        str(tbl)
-      })
-  
-  
-
-  
-
-},
-options = list(height = 750))
-    
-  
-```
-
-
-
-
-### Piirrä kuvio
-
-```{r, echo=FALSE, eval=TRUE, eval=TRUE}
-
-shinyApp(
-  ui = fluidPage(
-    
-      sidebarLayout(
-    
-    sidebarPanel(
       
           textInput("code", 
             label = h4("Kopioi <code> kentän koodi tähän"),
-            value = "hlth_sha1m"),
-          
-#           sliderInput("ncolumns", "Montako saraketta datassa on?",
-#                              min = 4, max = 6, value = 4),
+            value = "ilc_di04"),
 
               uiOutput("ui_col1"),
-              uiOutput("ui_col2"),
-              uiOutput("ui_col3"),
-              #uiOutput("ui_geo"),
+          
+             sliderInput("kartta_vuosi", h4("Kartan vuosi"),
+                              min = 1990, max = 2013, value = 2010),
+             
+          radioButtons("taso", h4("Aluetaso"),
+                       choices = list("NUTS 0" = 0,
+                                      "NUTS 1" = 1,
+                                      "NUTS 2" = 2,
+                                      "NUTS 3" = 3),
+                                      selected = 0),
 
-          submitButton("Päivitä!", icon("refresh"))
+              checkboxGroupInput("geo_choose", 
+                                  label = h4("Valitse maa"), 
+                                  choices = list("Alankomaat" = "NL","Belgia" = "BE","Bulgaria" = "BG","Espanja" = "ES",
+                                                 "Irlanti" = "IE","Iso-Britannia"="UK","Italia" = "IT","Itävalta" = "AT",
+                                                 "Kypros" = "CY","Latvia" = "LV","Liettua" = "LT","Portugali" = "PT",
+                                                 "Puola" = "PL","Ranska" = "FR","Romania" = "RO","Ruotsi" = "SE",
+                                                 "Saksa" = "DE","Slovakia" = "SK","Slovenia" = "SI","Suomi" = "FI",
+                                                 "Tanska" = "DK","Tšekki" = "CZ","Unkari" = "HU","Viro" = "EE"),
+                                  selected = c("AT","BE","BG","CY","CZ","DE","DK",
+                                               "EE","FI","HU","IE","IT",
+                                               "LT","LV","NL","PL","RO","SE",
+                                               "SI","SK","UK"), inline=TRUE),
+    
+              submitButton("Päivitä!", icon("refresh"))
       
       ),
                   
                   
-        mainPanel(
-                  #tabPanel("summary(data)", verbatimTextOutput("table")), 
-                  plotOutput("kuvio")
+        tabsetPanel(
+                  tabPanel("Raakadatan eka rivit", tableOutput("raaka")),         
+                  tabPanel("Aikasarjadata", tableOutput("taulukko")), 
+                  tabPanel("Aikasarjakuvio", plotOutput("kuvio", width="100%", height="800")),
+                  tabPanel("Kartan data", tableOutput("kartta_data")), 
+                  tabPanel("Kartta", plotOutput("kartta", width="100%", height="800"))
+                  
       )
-    )
+    #)
     ),
   
   server = function(input, output) {
     
     
         dataInput <- reactive({
-          tbl <- get_eurostat(id=input$code)
-          label_eurostat(tbl)
-        })
+          tbl_raw <- get_eurostat(id=input$code)
+          tbl <- label_eurostat(tbl_raw)
+          tbl$geo_code <- tbl_raw$geo
+          
+          tbl$time <- as.factor(tbl$time)
+          tbl$time <- as.numeric(levels(tbl$time))[tbl$time]
+          tbl <- tbl[!is.na(tbl$value),]
+          tbl
+          
+          })
         
+ dataInputKartta <- reactive({
+          load("data/map.df.nuts.rda")
+          map.df <- map.df
+          map.df
+          })
+ 
+  dataInputKarttaMaa <- reactive({
+          load("data/map.df.rda")
+          map.df.maa <- map.df
+          map.df.maa
+          })
         
-
         
         #if (input$ncolumns >= 4) {
         output$ui_col1 <- renderUI({
             
                   tbl <- dataInput()
-                  #tbl <- tbl[ , -which(names(tbl) %in% c("geo","time","value"))]
-                  levelit1 <- levels(tbl[[1]])
                   # levels
-                  selectInput("col1", h4("Valitse 1. sarakkeen luokka"),
-                              choices = levelit1)
-                  })
-        #}
-        
-        #if (input$ncolumns >= 5) {
-          
-          output$ui_col2 <- renderUI({
-            
-                  tbl <- dataInput()
-                  #tbl <- tbl[ , -which(names(tbl) %in% c("geo","time","value"))]
+                  levelit1 <- levels(tbl[[1]])          
                   levelit2 <- levels(tbl[[2]])
-                  
-                  selectInput("col2", h4("Valitse 2. sarakkeen luokka"), 
-                              choices = levelit2)
-                  
-                 })
-        
-        #  }
-        
-        
-        #if (input$ncolumns >= 6) {
-          output$ui_col3 <- renderUI({
-            
-                  tbl <- dataInput()
-                  #tbl <- tbl[ , -which(names(tbl) %in% c("geo","time","value"))]
                   levelit3 <- levels(tbl[[3]])
+                  if (ncol(tbl) >= 4) levelit4 <- levels(tbl[[4]])
+                  if (ncol(tbl) >= 5) levelit5 <- levels(tbl[[5]])
                   
-                  selectInput("col3", h4("Valitse 3. sarakkeen luokka"), 
-                              choices = levelit3)
-                  
+#                   ncols <- ncol(tbl[ , -which(names(tbl) %in% c("geo","time","value","geo_code"))])
+                  ncols <- ncol(tbl) - 4
+                   
+                  if (ncols == 0) {
+                    ip1 <- ""
+                    ip2 <- ""
+                    ip3 <- ""
+                    ip4 <- ""
+                    ip5 <- ""
+                     }
+                  if (ncols == 1) {
+                    ip1 <- selectInput("col1", h5("Valitse luokka 1"),choices = levelit1)
+                    ip2 <- ""
+                    ip3 <- ""
+                    ip4 <- ""
+                    ip5 <- ""
+                     }
+                   if (ncols == 2) {
+                     ip1 <- selectInput("col1", h5("Valitse luokka 1"),choices = levelit1)
+                     ip2 <- selectInput("col2", h5("Valitse luokka 2"),choices = levelit2)
+                     ip3 <- ""
+                     ip4 <- ""
+                     ip5 <- ""
+                     }
+                  if (ncols == 3) {
+                    ip1 <- selectInput("col1", h5("Valitse luokka 1"),choices = levelit1)
+                    ip2 <- selectInput("col2", h5("Valitse luokka 2"),choices = levelit2)
+                    ip3 <-  selectInput("col3", h5("Valitse luokka 3"),choices = levelit3)
+                    ip4 <- ""
+                    ip5 <- ""
+                    }
+                  if (ncols == 4) {
+                    ip1 <- selectInput("col1", h5("Valitse luokka 1"),choices = levelit1)
+                    ip2 <- selectInput("col2", h5("Valitse luokka 2"),choices = levelit2)
+                    ip3 <-  selectInput("col3", h5("Valitse luokka 3"),choices = levelit3)
+                    ip4 <-  selectInput("col4", h5("Valitse luokka 4"),choices = levelit4)
+                    ip5 <- ""
+                    }
+                  if (ncols == 5) {
+                    ip1 <- selectInput("col1", h5("Valitse luokka 1"),choices = levelit1)
+                    ip2 <- selectInput("col2", h5("Valitse luokka 2"),choices = levelit2)
+                    ip3 <-  selectInput("col3", h5("Valitse luokka 3"),choices = levelit3)
+                    ip4 <-  selectInput("col4", h5("Valitse luokka 4"),choices = levelit4)
+                    ip5 <-  selectInput("col5", h5("Valitse luokka 5"),choices = levelit5)
+                    }
+                  list(ip1,ip2,ip3,ip4,ip5)
                   })
-         # }
-#         output$ui_geo <- renderUI({
-#             
-#                   tbl <- dataInput()
-#                   lev_geo <- levels(tbl[["geo"]])
-#                   
-#                   selectInput("geo", "Valitse geo",
-#                               choices = lev_geo)
-#                   })
-        
+ 
+ 
+ manipulate_data <- function(x) {
+          tbl <- x
+          #ncols <- ncol(tbl[ , -which(names(tbl) %in% c("geo","time","value","geo_code"))])
+          ncols <- ncol(tbl) - 4
 
-    
-    output$table <- renderPrint({
-      c(input$col1,input$col2,input$col3)
+          if (ncols == 1) {
+            tbl <- tbl[tbl[1] == input$col1,]
+          }
+          if (ncols == 2) {
+            tbl <- tbl[tbl[1] == input$col1,]
+            tbl <- tbl[tbl[2] == input$col2,]
+          }
+          if (ncols == 3) {
+            tbl <- tbl[tbl[1] == input$col1,]
+            tbl <- tbl[tbl[2] == input$col2,]
+            tbl <- tbl[tbl[3] == input$col3,]
+          }
+        if (ncols == 4) {
+            tbl <- tbl[tbl[1] == input$col1,]
+            tbl <- tbl[tbl[2] == input$col2,]
+            tbl <- tbl[tbl[3] == input$col3,]
+            tbl <- tbl[tbl[4] == input$col4,]
+          }
+        # valitaan maat
+        tbl$geo_ss <- substr(tbl$geo_code, 1,2)
+        tbl <- tbl[tbl$geo_ss %in% input$geo_choose ,] # 
       
-      
-    })
+        # aluetaso
+        tbl <- tbl[nchar(as.character(tbl$geo_code)) == as.numeric(input$taso)+2, ]
+        tbl
+ }
 
     
     output$kuvio <- renderPlot({
     
-        tbl <- dataInput()
+      tbl <- dataInput()
       
-        tbl$time <- as.factor(tbl$time)
-        tbl$time <- as.numeric(levels(tbl$time))[tbl$time]
-        tbl <- tbl[!is.na(tbl$value),]
-        
-        tbl <- tbl[tbl[1] == input$col1,]
-        tbl <- tbl[tbl[2] == input$col2,]
-        tbl <- tbl[tbl[3] == input$col3,]
-    
+      tbl <- manipulate_data(tbl)
+                        
       library(ggplot2)
       ggplot(tbl, aes(x=time,y=value,
-                  color=geo,group=geo)) +
+                  color=geo_ss,group=geo)) +
           geom_point() + 
           geom_line() +
           theme(legend.position="none") +
           geom_text(data=merge(tbl, aggregate(time ~ geo, tbl, max),
                        by=c("time","geo")),
-            aes(x=time, y = value, label=geo),
-            hjust=-0.5,vjust=-1,size=4) 
-  
-})
+            aes(x=time, y = value, label=geo), hjust=-0.5,vjust=-1,size=4) +
+            coord_cartesian(xlim=c(min(tbl$time)-1,max(tbl$time)+5)) +
+            theme_minimal()
+      })
+    
+    output$kartta <- renderPlot({
+        tbl <- dataInput()
+        map.df <- dataInputKartta()
+        
+        
+      tbl <- manipulate_data(tbl)
+      
+      # kartan vuosi
+      tbl <- tbl[tbl$time == input$kartta_vuosi, ] #input$kartta_vuosi
+
+      # subset karttadata
+      map.df <- map.df[map.df$STAT_LEVL_ == as.numeric(input$taso), ]
+      # yhdistä data karttaan
+            
+      dat <- merge(map.df,tbl,by.x="NUTS_ID",by.y="geo_code", all.y=TRUE)
+      dat <- dat[order(dat$order), ]
+      
+      # plotataan maat harmaalla
+      map.df.maa <- dataInputKarttaMaa()
+      map.df.maa <- map.df.maa[map.df.maa$CNTR_ID %in% input$geo_choose, ]
+            
+      #mean_in_data <- mean(dat$value, na.rm = TRUE)
+      library(ggplot2)
+      library(mapproj)
+      
+      ggplot(data=dat,
+             aes(long,lat,group=group)) +
+        geom_polygon(data=map.df.maa, aes(long,lat,group=group),fill="grey90",color="white",size=.2) +
+        geom_polygon(aes(fill = value),colour="white",size=.2) +
+        theme_minimal() +
+       theme(axis.title = element_blank()) +       
+      coord_map(project="orthographic")
+
+      })
+
+    output$kartta_data <- renderTable({
+        tbl <- dataInput()
+      
+      tbl <- manipulate_data(tbl)
+      tbl <- tbl[tbl$time == input$kartta_vuosi, ] #input$kartta_vuosi
+      
+      tbl
+
+      })
+
+
+
+    output$taulukko <- renderTable({
+        tbl <- dataInput()
+      
+      tbl <- manipulate_data(tbl)
+      
+      tbl
+
+      })
+
+    output$raaka <- renderTable({
+        tbl <- dataInput()
+    head(tbl,50)
+
+      })
     
 
+
 },
-options = list(height = 550))
+options = list(height = 1500))
     
   
 ```
