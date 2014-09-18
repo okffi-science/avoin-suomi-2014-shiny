@@ -7,8 +7,6 @@ df <- ess_arvot
 library(plyr)
 
 
-
-
 relevel_likert4 <- function(x) {
   x <- revalue(x, c("Allow many to come and live here"=4,
                "Allow some"=3,
@@ -24,6 +22,26 @@ relevel_likert4 <- function(x) {
 df$imsmetn <- relevel_likert4(df$imsmetn)
 df$imdfetn <- relevel_likert4(df$imdfetn)
 df$impcntr <- relevel_likert4(df$impcntr)
+
+# homo lesbo
+
+relevel_likert5 <- function(x) {
+  library(plyr)
+  x <- revalue(x, c("Agree strongly"=5, 
+                    "Agree"=4,
+                    "Neither agree nor disagree"=3,
+                    "Disagree"=2,
+                    "Disagree strongly"=1))
+  x <- as.character(x)
+  x[x %in% "Refusal"] <- NA
+  x[x %in% "Don't know"] <- NA
+  x[x %in% "No answer"] <- NA
+  x <- factor(x, levels=c("5","4","3","2","1"))
+}
+
+
+df$freehms <- relevel_likert5(df$freehms)
+
 
 # 
 

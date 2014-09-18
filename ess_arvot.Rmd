@@ -151,6 +151,66 @@ options = list(height = 750))
 ```
 
 
-## Asenteet muita vähemmistöjä kohtaan
+### Asenteet muita vähemmistöjä kohtaan
+
+>Homoilla ja lesboilla pitäisi olla vapaus elää elämäänsä haluamallaan tavalla?
+
+```{r, echo=FALSE}
+    source("data_arvot.R")
+    source("funktiot.R")
+
+shinyApp(
+  ui = fluidPage(
+    
+    inputPanel(
+                    radioButtons("value", h4("Vastaa itse tähän"),
+                                c("Täysin samaa mieltä"=5,
+                                  "Samaa mieltä"=4,
+                                  "Ei samaa eikä eri mieltä"=3,
+                                  "Eri mieltä"=2,
+                                  "Täysin eri mieltä"=1))
+                    ),
+                  
+                  
+      tabsetPanel(
+                  tabPanel("Keskiarvot maittain", plotOutput("ess_keskiarvo", height="450px",width="100%")), 
+                  tabPanel("Eri vastausvaihtoehtojen osuudet maittain", plotOutput("ess_jakauma", height="450px",width="100%")),
+                  tabPanel("Maittaiset keskiarvot kartalla", plotOutput("ess_kartta", height="450px",width="100%"))
+      )
+    ),
+  
+  server = function(input, output) {
+    
+
+
+    
+    output$ess_keskiarvo <- renderPlot({
+
+         ess_keskiarvo(var="df$freehms",
+                   value = as.numeric(input$value)
+         )
+         })
+  
+  
+    output$ess_jakauma <- renderPlot({
+    
+          ess_jakauma(var="df$freehms",
+                    value = as.numeric(input$value)
+          )
+          })
+  
+    output$ess_kartta <- renderPlot({
+    
+         ess_kartta(var="df$freehms",
+                    value = as.numeric(input$value)
+         )
+         })
+  
+
+},
+options = list(height = 750))
+    
+  
+```
 
 
